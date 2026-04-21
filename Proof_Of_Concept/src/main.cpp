@@ -31,16 +31,36 @@ struct
 //           END RemoteXY include          //
 /////////////////////////////////////////////
 
+#include <Servo.h>
+
 #define LED_BUILTIN 2
+#define LEFT_MOTOR_PWM_PIN 32
+#define RIGHT_MOTOR_PWM_PIN 33
+
+#define ESC_SIGNAL_PIN 10
+#define THRUSTER_CALIBRATION_DELAY 5000  // Delay necessary for thruster calibration in milli-seconds.
+#define STALL_US 1500                    // Duty cycle for stalling thruster in micro-seconds.
+#define DUTY_CYCLE_MIN 1350
+#define DUTY_CYCLE_MAX 1650
 
 void setMotor(int left, int right);
 
+Servo thruster_left;
+Servo thruster_right;
+
 void setup()
 {
-  RemoteXY_Init(); // initialization by macros
+  RemoteXY_Init();
 
-  // TODO you setup code
   pinMode(LED_BUILTIN, OUTPUT);
+
+  thruster_left.attach(LEFT_MOTOR_PWM_PIN, 1000, 2000);
+  thruster_right.attach(RIGHT_MOTOR_PWM_PIN, 1000, 2000);
+
+  thruster_left.writeMicroseconds(STALL_US);
+  thruster_right.writeMicroseconds(STALL_US);
+
+  RemoteXYEngine.delay(THRUSTER_CALIBRATION_DELAY);
 }
 
 void loop()
@@ -55,13 +75,13 @@ void loop()
   }
 
   setMotor(RemoteXY.LEFT_MOTOR, RemoteXY.RIGHT_MOTOR);
-
-
-  // TODO you loop code
-  // use the RemoteXY structure for data transfer
-  // do not call delay(), use instead RemoteXYEngine.delay()
 }
 
 void setMotor(int left, int right) {
+  // map(value, fromLow, fromHigh, toLow, toHigh)
+  int left_duty_cycle = map(left, 0, 100, DUTY_CYCLE_MIN, DUTY_CYCLE_MAX);
+  int right_duty_cycle = map(right, 0, 100, DUTY_CYCLE_MIN, DUTY_CYCLE_MAX);
 
+  thruster_left.writeMicroseconds(left_duty_cycle);
+  thruster_right.writeMicroseconds(right_duty_cycle);
 }
